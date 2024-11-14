@@ -1,14 +1,14 @@
 import { AsyncLocalStorage } from 'async_hooks';
 
-interface IClassType<Args extends any[]> {
+interface IScopedClassType<Args extends any[]> {
   new (...args: Args): any;
 }
 
-interface IClassRun<Args extends any[]> {
+interface IScopedClassRun<Args extends any[]> {
     runInContext<Result = unknown>(callback: () => Result, ...args: Args): Result;
 }
 
-type ClassTypeActivator<Args extends any[], ClassType extends IClassType<Args>> = {
+type ScopedClassTypeActivator<Args extends any[], ClassType extends IScopedClassType<Args>> = {
     new (): InstanceType<ClassType>;
 } & Omit<ClassType, 'prototype'>;
 
@@ -16,7 +16,7 @@ type Function = () => unknown;
 
 export class ScopeContextError extends Error { }
 
-export const scoped = <Args extends any[], ClassType extends IClassType<Args>>(ClassCtor: ClassType): ClassTypeActivator<Args, ClassType> & IClassRun<Args> => {
+export const scoped = <Args extends any[], ClassType extends IScopedClassType<Args>>(ClassCtor: ClassType): ScopedClassTypeActivator<Args, ClassType> & IScopedClassRun<Args> => {
 
     const asyncStorage = new AsyncLocalStorage();
 
@@ -55,9 +55,10 @@ export const scoped = <Args extends any[], ClassType extends IClassType<Args>>(C
        return asyncStorage.run(args, fn);
     };
 
-    return ClassActivator as unknown as ClassTypeActivator<Args, ClassType> & IClassRun<Args>;
+    return ClassActivator as unknown as ScopedClassTypeActivator<Args, ClassType> & IScopedClassRun<Args>;
 }
 
+export type { IScopedClassType, IScopedClassRun, ScopedClassTypeActivator } 
 
 /*
 const TestClass = scoped(class {
