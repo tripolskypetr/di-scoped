@@ -4,6 +4,31 @@
 
 This works the same like [Scoped ASP.Net Core services](https://henriquesd.medium.com/dependency-injection-and-service-lifetimes-in-net-core-ab9189349420), aka `These services are created once per HTTP request and are tied to the lifetime of the request (i.e., the HttpContext).`
 
+## Usage 
+
+```tsx
+import { scoped } from 'di-scoped';
+
+export const ScopedService = scoped(class  {
+
+    constructor(public jwt: string) { }
+
+    setJwt = (jwt: string) => {
+        this.jwt = jwt;
+    }
+
+    getJwt = () => {
+        return this.jwt;
+    };
+
+});
+
+export type TScopedService = InstanceType<typeof ScopedService>;
+
+export default ScopedService;
+
+```
+
 ## The Context Scoped services for NodeJS
 
 1. **The constructor arguments are moved to the context creation scope**
