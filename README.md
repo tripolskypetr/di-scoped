@@ -4,6 +4,8 @@
 
 This works the same like [Scoped ASP.Net Core services](https://henriquesd.medium.com/dependency-injection-and-service-lifetimes-in-net-core-ab9189349420), aka `These services are created once per HTTP request and are tied to the lifetime of the request (i.e., the HttpContext).`
 
+Made for usage with [di-kit package](https://npmjs.com/package/di-kit)
+
 ## Usage 
 
 ```tsx

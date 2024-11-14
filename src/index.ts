@@ -27,7 +27,7 @@ export const scoped = <Args extends any[], ClassType extends IScopedClassType<Ar
             const proxyInstance = new Proxy(this, {
                 get(_, propKey, receiver) {
                     if (propKey === "init") {
-                        return Reflect.get(this, propKey, receiver);
+                        return;
                     }
                     const referenceKey = asyncStorage.getStore() as Args;
                     if (!referenceKey) {
