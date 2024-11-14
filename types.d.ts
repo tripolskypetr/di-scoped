@@ -9,6 +9,6 @@ type ScopedClassTypeActivator<Args extends any[], ClassType extends IScopedClass
 } & Omit<ClassType, 'prototype'>;
 declare class ScopeContextError extends Error {
 }
-declare const scoped: <Args extends any[], ClassType extends IScopedClassType<Args>>(ClassCtor: ClassType) => ScopedClassTypeActivator<Args, ClassType> & IScopedClassRun<Args>;
+declare const scoped: <ClassType extends new (...args: any[]) => any>(ClassCtor: ClassType) => ScopedClassTypeActivator<ConstructorParameters<ClassType>, ClassType> & IScopedClassRun<ConstructorParameters<ClassType>>;
 
 export { type IScopedClassRun, type IScopedClassType, ScopeContextError, type ScopedClassTypeActivator, scoped };

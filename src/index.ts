@@ -5,61 +5,57 @@ interface IScopedClassType<Args extends any[]> {
 }
 
 interface IScopedClassRun<Args extends any[]> {
-    runInContext<Result = unknown>(callback: () => Result, ...args: Args): Result;
+  runInContext<Result = unknown>(callback: () => Result, ...args: Args): Result;
 }
 
 type ScopedClassTypeActivator<Args extends any[], ClassType extends IScopedClassType<Args>> = {
-    new (): InstanceType<ClassType>;
+  new (): InstanceType<ClassType>;
 } & Omit<ClassType, 'prototype'>;
 
-type Function = () => unknown;
+export class ScopeContextError extends Error {}
 
-export class ScopeContextError extends Error { }
+export const scoped = <ClassType extends new (...args: any[]) => any>(
+  ClassCtor: ClassType
+): ScopedClassTypeActivator<ConstructorParameters<ClassType>, ClassType> & IScopedClassRun<ConstructorParameters<ClassType>> => {
+  const asyncStorage = new AsyncLocalStorage<ConstructorParameters<ClassType>>();
+  const referenceMap = new WeakMap<ConstructorParameters<ClassType>, InstanceType<ClassType>>();
 
-export const scoped = <Args extends any[], ClassType extends IScopedClassType<Args>>(ClassCtor: ClassType): ScopedClassTypeActivator<Args, ClassType> & IScopedClassRun<Args> => {
-
-    const asyncStorage = new AsyncLocalStorage();
-
-    const referenceMap = new WeakMap<Args, InstanceType<ClassType>>();
-
-    class ClassReferer {
-        constructor() {
-            const proxyInstance = new Proxy(this, {
-                get(_, propKey, receiver) {
-                    if (propKey === "init") {
-                        return;
-                    }
-                    const referenceKey = asyncStorage.getStore() as Args;
-                    if (!referenceKey) {
-                        throw new ScopeContextError('di-scoped ContextReferer not running in context');
-                    }
-                    const reference = referenceMap.has(referenceKey)
-                        ? referenceMap.get(referenceKey)!
-                        : referenceMap
-                            .set(referenceKey, new ClassCtor(...referenceKey))
-                            .get(referenceKey)!;
-                    return Reflect.get(reference, propKey, receiver);
-                },
-                set(target, propKey, receiver) {
-                    return Reflect.set(target, propKey, receiver);
-                },
-            });
-            Object.setPrototypeOf(this, proxyInstance);
-        };
-    };
-
-    const classInstance = new ClassReferer;
-
-    function ClassActivator() {
-        return classInstance;
+  class ClassReferer {
+    constructor() {
+      const proxyInstance = new Proxy(this, {
+        get(_, propKey, receiver) {
+          if (propKey === 'init') {
+            return;
+          }
+          const referenceKey = asyncStorage.getStore();
+          if (!referenceKey) {
+            throw new ScopeContextError('di-scoped ContextReferer not running in context');
+          }
+          const reference = referenceMap.has(referenceKey)
+            ? referenceMap.get(referenceKey)!
+            : referenceMap.set(referenceKey, new ClassCtor(...referenceKey)).get(referenceKey)!;
+          return Reflect.get(reference, propKey, receiver);
+        },
+        set(target, propKey, value, receiver) {
+          return Reflect.set(target, propKey, value, receiver);
+        },
+      });
+      Object.setPrototypeOf(this, proxyInstance);
     }
+  }
 
-    ClassActivator.runInContext = (fn: Function, ...args: Args) => {
-       return asyncStorage.run(args, fn);
-    };
+  const classInstance = new ClassReferer();
 
-    return ClassActivator as unknown as ScopedClassTypeActivator<Args, ClassType> & IScopedClassRun<Args>;
-}
+  function ClassActivator() {
+    return classInstance;
+  }
+
+  ClassActivator.runInContext = (fn: () => unknown, ...args: ConstructorParameters<ClassType>) => {
+    return asyncStorage.run(args, fn);
+  };
+
+  return ClassActivator as unknown as ScopedClassTypeActivator<ConstructorParameters<ClassType>, ClassType> & IScopedClassRun<ConstructorParameters<ClassType>>;
+};
 
 export type { IScopedClassType, IScopedClassRun, ScopedClassTypeActivator } 
 
