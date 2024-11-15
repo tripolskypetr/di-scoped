@@ -31,9 +31,10 @@ export const scoped = <ClassType extends new (...args: any[]) => any>(
           if (!referenceKey) {
             throw new ScopeContextError('di-scoped ContextReferer not running in context');
           }
-          const reference = referenceMap.has(referenceKey)
-            ? referenceMap.get(referenceKey)!
-            : referenceMap.set(referenceKey, new ClassCtor(...referenceKey)).get(referenceKey)!;
+          let reference = referenceMap.get(referenceKey)!;
+          if (!reference) {
+            reference = referenceMap.set(referenceKey, new ClassCtor(...referenceKey)).get(referenceKey)!;
+          }
           return Reflect.get(reference, propKey, receiver);
         },
         set(target, propKey, value, receiver) {
@@ -51,6 +52,7 @@ export const scoped = <ClassType extends new (...args: any[]) => any>(
   }
 
   ClassActivator.runInContext = (fn: () => unknown, ...args: ConstructorParameters<ClassType>) => {
+    referenceMap.set(args, new ClassCtor(...args));
     return asyncStorage.run(args, fn);
   };
 
