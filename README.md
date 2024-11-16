@@ -93,3 +93,7 @@ if (instanceRef1 === instanceRef2) {
     //          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 }
 ```
+
+## See also
+
+If you looking for integrated DI container for scoped services instantiation, take a look on [di-kit npm package](https://www.npmjs.com/package/di-kit)
