@@ -52,7 +52,9 @@ const TestClass = scoped(class {
 
 
 TestClass.runInContext(() => {
+
     new TestClass().test(); // Hello, Peter
+
 }, "Peter")
 
 new TestClass().test(); // ScopeContextError('di-scoped ContextReferer not running in context');
@@ -67,14 +69,20 @@ let instanceRef1;
 let instanceRef2;
 
 TestClass.runInContext(() => {
+
     instanceRef1 = new TestClass()
     instanceRef1.test() // Hello, Peter
+
 }, "Peter")
 
+
 TestClass.runInContext(() => {
+
     instanceRef2 = new TestClass()
     instanceRef2.test() // Hello, not Peter
+
 }, "not Peter")
+
 
 if (TestClass === TestClass) {
     console.log("Ok! This is the same class")
