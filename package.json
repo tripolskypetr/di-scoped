@@ -1,6 +1,6 @@
 {
   "name": "di-scoped",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "A context-based instantiation system using `async_hooks`, ensuring each class instance is scoped to a unique execution context, with automatic creation and reuse of different instances using the same reference across multiple contexts.",
   "author": {
     "name": "Petr Tripolsky",
@@ -50,7 +50,6 @@
     "@types/node": "22.9.0",
     "rollup": "3.29.4",
     "rollup-plugin-dts": "6.1.1",
-    "rollup-plugin-inject-process-env": "1.3.1",
     "rollup-plugin-peer-deps-external": "2.2.4",
     "tslib": "2.7.0"
   },
