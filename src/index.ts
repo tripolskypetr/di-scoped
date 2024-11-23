@@ -37,8 +37,16 @@ export const scoped = <ClassType extends new (...args: any[]) => any>(
           }
           return Reflect.get(reference, propKey, receiver);
         },
-        set(target, propKey, value, receiver) {
-          return Reflect.set(target, propKey, value, receiver);
+        set(_, propKey, value, receiver) {
+          const referenceKey = asyncStorage.getStore();
+          if (!referenceKey) {
+            throw new ScopeContextError('di-scoped ContextReferer not running in context');
+          }
+          let reference = referenceMap.get(referenceKey)!;
+          if (!reference) {
+            reference = referenceMap.set(referenceKey, new ClassCtor(...referenceKey)).get(referenceKey)!;
+          }
+          return Reflect.set(reference, propKey, value, receiver);
         },
       });
       Object.setPrototypeOf(this, proxyInstance);
