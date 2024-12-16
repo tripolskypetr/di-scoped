@@ -6,6 +6,7 @@ interface IScopedClassType<Args extends any[]> {
 
 interface IScopedClassRun<Args extends any[]> {
   runInContext<Result = unknown>(callback: () => Result, ...args: Args): Result;
+  runAsyncIterator<T, TReturn = any, TNext = unknown>(iterator: AsyncGenerator<T, TReturn, TNext>, ...ctorArgs: Args): AsyncGenerator<T, TReturn, TNext>
 }
 
 type ScopedClassTypeActivator<Args extends any[], ClassType extends IScopedClassType<Args>> = {
@@ -62,6 +63,39 @@ export const scoped = <ClassType extends new (...args: any[]) => any>(
   ClassActivator.runInContext = (fn: () => unknown, ...args: ConstructorParameters<ClassType>) => {
     referenceMap.set(args, new ClassCtor(...args));
     return asyncStorage.run(args, fn);
+  };
+
+  ClassActivator.runAsyncIterator = function <T, TReturn = any, TNext = unknown>(
+    iterator: AsyncGenerator<T, TReturn, TNext>,
+    ...ctorArgs: ConstructorParameters<ClassType>
+  ): AsyncGenerator<T, TReturn, TNext> {
+    referenceMap.set(ctorArgs, new ClassCtor(...ctorArgs));
+    return {
+      async next(...args: [] | [TNext]): Promise<IteratorResult<T>> {
+        return asyncStorage.run(ctorArgs, () => iterator.next(...args));
+      },
+      async return(value?: TReturn | PromiseLike<TReturn>): Promise<IteratorResult<T>> {
+        if (iterator.return) {
+          return asyncStorage.run(ctorArgs, () => iterator.return!(value!));
+        }
+        return Promise.resolve({ value: undefined as any, done: true } as IteratorResult<T>);
+      },
+      async throw(...args: [any]): Promise<IteratorResult<T>> {
+        if (iterator.throw) {
+          return asyncStorage.run(ctorArgs, () => iterator.throw!(...args));
+        }
+        return Promise.reject(new Error("Iterator does not support throwing errors"));
+      },
+      [Symbol.asyncIterator](): AsyncGenerator<T, TReturn, TNext> {
+        return this;
+      },
+      async [Symbol.asyncDispose]() {
+        if (typeof iterator[Symbol.asyncDispose] === "function") {
+          return asyncStorage.run(ctorArgs, () => iterator[Symbol.asyncDispose]!());
+        }
+        return Promise.resolve();
+      },
+    }
   };
 
   return ClassActivator as unknown as ScopedClassTypeActivator<ConstructorParameters<ClassType>, ClassType> & IScopedClassRun<ConstructorParameters<ClassType>>;

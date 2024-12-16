@@ -3,6 +3,7 @@ interface IScopedClassType<Args extends any[]> {
 }
 interface IScopedClassRun<Args extends any[]> {
     runInContext<Result = unknown>(callback: () => Result, ...args: Args): Result;
+    runAsyncIterator<T, TReturn = any, TNext = unknown>(iterator: AsyncGenerator<T, TReturn, TNext>, ...ctorArgs: Args): AsyncGenerator<T, TReturn, TNext>;
 }
 type ScopedClassTypeActivator<Args extends any[], ClassType extends IScopedClassType<Args>> = {
     new (): InstanceType<ClassType>;
