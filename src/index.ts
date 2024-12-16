@@ -6,7 +6,8 @@ interface IScopedClassType<Args extends any[]> {
 
 interface IScopedClassRun<Args extends any[]> {
   runInContext<Result = unknown>(callback: () => Result, ...args: Args): Result;
-  runAsyncIterator<T, TReturn = any, TNext = unknown>(iterator: AsyncGenerator<T, TReturn, TNext>, ...ctorArgs: Args): AsyncGenerator<T, TReturn, TNext>
+  runAsyncIterator<T, TReturn = any, TNext = unknown>(iterator: AsyncGenerator<T, TReturn, TNext>, ...ctorArgs: Args): AsyncGenerator<T, TReturn, TNext>;
+  runIterator<T, TReturn = any, TNext = unknown>(generator: Generator<T, TReturn, TNext>, ...ctorArgs: Args): Generator<T, TReturn, TNext>;
 }
 
 type ScopedClassTypeActivator<Args extends any[], ClassType extends IScopedClassType<Args>> = {
@@ -89,13 +90,43 @@ export const scoped = <ClassType extends new (...args: any[]) => any>(
       [Symbol.asyncIterator](): AsyncGenerator<T, TReturn, TNext> {
         return this;
       },
+      // @ts-ignore
       async [Symbol.asyncDispose]() {
+        // @ts-ignore
         if (typeof iterator[Symbol.asyncDispose] === "function") {
+          // @ts-ignore
           return asyncStorage.run(ctorArgs, () => iterator[Symbol.asyncDispose]!());
         }
         return Promise.resolve();
       },
     }
+  };
+
+  ClassActivator.runIterator = function <T, TReturn = any, TNext = unknown>(
+    generator: Generator<T, TReturn, TNext>,
+    ...ctorArgs: ConstructorParameters<ClassType>
+  ): Generator<T, TReturn, TNext> {
+    referenceMap.set(ctorArgs, new ClassCtor(...ctorArgs));
+    return {
+      next(...args: [] | [TNext]): IteratorResult<T, TReturn> {
+        return asyncStorage.run(ctorArgs, () => generator.next(...args));
+      },
+      return(value?: TReturn): IteratorResult<T, TReturn> {
+        if (generator.return) {
+          return asyncStorage.run(ctorArgs, () => generator.return!(value!));
+        }
+        return { value: undefined as any, done: true };
+      },
+      throw(...args: [any]): IteratorResult<T, TReturn> {
+        if (generator.throw) {
+          return asyncStorage.run(ctorArgs, () => generator.throw!(...args));
+        }
+        throw new Error("Generator does not support throwing errors");
+      },
+      [Symbol.iterator](): Generator<T, TReturn, TNext> {
+        return this;
+      },
+    };
   };
 
   return ClassActivator as unknown as ScopedClassTypeActivator<ConstructorParameters<ClassType>, ClassType> & IScopedClassRun<ConstructorParameters<ClassType>>;
@@ -110,11 +141,27 @@ const TestClass = scoped(class {
     }
 
     test() {
-        console.log(`Hello, ${this.name}`);
+      return `Hello, ${this.name}`;
     }
 });
 */
 
+/*
+class TestIterator {
+
+  test = new TestClass();
+
+  *run() {
+    yield this.test.test()
+    yield this.test.test()
+    yield this.test.test()
+  }
+}
+
+const test = new TestIterator()
+
+console.log([...TestClass.runIterator(test.run(), "Pahom")])
+*/
 
 // TestClass.runInContext(() => {
 //    new TestClass().test(); // Hello, Peter

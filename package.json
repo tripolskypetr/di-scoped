@@ -1,6 +1,6 @@
 {
   "name": "di-scoped",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "A context-based instantiation system using `async_hooks`, ensuring each class instance is scoped to a unique execution context, with automatic creation and reuse of different instances using the same reference across multiple contexts.",
   "author": {
     "name": "Petr Tripolsky",
