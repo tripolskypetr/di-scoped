@@ -2,6 +2,7 @@ interface IScopedClassType<Args extends any[]> {
     new (...args: Args): any;
 }
 interface IScopedClassRun<Args extends any[]> {
+    hasContext(): boolean;
     runInContext<Result = unknown>(callback: () => Result, ...args: Args): Result;
     runAsyncIterator<T, TReturn = any, TNext = unknown>(iterator: AsyncGenerator<T, TReturn, TNext>, ...ctorArgs: Args): AsyncGenerator<T, TReturn, TNext>;
     runIterator<T, TReturn = any, TNext = unknown>(generator: Generator<T, TReturn, TNext>, ...ctorArgs: Args): Generator<T, TReturn, TNext>;

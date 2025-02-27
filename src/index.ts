@@ -5,6 +5,7 @@ interface IScopedClassType<Args extends any[]> {
 }
 
 interface IScopedClassRun<Args extends any[]> {
+  hasContext(): boolean;
   runInContext<Result = unknown>(callback: () => Result, ...args: Args): Result;
   runAsyncIterator<T, TReturn = any, TNext = unknown>(iterator: AsyncGenerator<T, TReturn, TNext>, ...ctorArgs: Args): AsyncGenerator<T, TReturn, TNext>;
   runIterator<T, TReturn = any, TNext = unknown>(generator: Generator<T, TReturn, TNext>, ...ctorArgs: Args): Generator<T, TReturn, TNext>;
@@ -127,6 +128,10 @@ export const scoped = <ClassType extends new (...args: any[]) => any>(
         return this;
       },
     };
+  };
+
+  ClassActivator.hasContext = () => {
+    return !!asyncStorage.getStore();
   };
 
   return ClassActivator as unknown as ScopedClassTypeActivator<ConstructorParameters<ClassType>, ClassType> & IScopedClassRun<ConstructorParameters<ClassType>>;
