@@ -69,7 +69,10 @@ export const scoped = <ClassType extends new (...args: any[]) => any>(
   };
 
   ClassActivator.runOutOfContext = (fn: () => unknown) => {
-    return new AsyncResource('UNTRACKED').runInAsyncScope(fn);
+    const resource = new AsyncResource("UNTRACKED");
+    const result = resource.runInAsyncScope(fn);
+    resource.emitDestroy();
+    return result;
   };
 
   ClassActivator.runAsyncIterator = function <T, TReturn = any, TNext = unknown>(
