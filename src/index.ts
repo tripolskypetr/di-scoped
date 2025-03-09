@@ -1,4 +1,4 @@
-import { AsyncLocalStorage } from 'async_hooks';
+import { AsyncLocalStorage, AsyncResource } from 'async_hooks';
 
 interface IScopedClassType<Args extends any[]> {
   new (...args: Args): any;
@@ -69,7 +69,7 @@ export const scoped = <ClassType extends new (...args: any[]) => any>(
   };
 
   ClassActivator.runOutOfContext = (fn: () => unknown) => {
-    return asyncStorage.exit(fn);
+    return new AsyncResource('UNTRACKED').runInAsyncScope(fn);
   };
 
   ClassActivator.runAsyncIterator = function <T, TReturn = any, TNext = unknown>(
