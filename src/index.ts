@@ -69,11 +69,8 @@ export const scoped = <ClassType extends new (...args: any[]) => any>(
   };
 
   ClassActivator.runOutOfContext = (fn: () => unknown) => {
-    if ("disable" in asyncStorage) {
-      return () => {
-        asyncStorage.disable();
-        fn();
-      };
+    if ("exit" in asyncStorage) {
+      return () => asyncStorage.exit(fn);
     } else {
       console.warn("di-kit using untracked AsyncResource in runOutOfContext as a fallback")
       return () => {
