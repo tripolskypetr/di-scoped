@@ -7,7 +7,7 @@ interface IScopedClassType<Args extends any[]> {
 interface IScopedClassRun<Args extends any[]> {
   hasContext(): boolean;
   runInContext<Result = unknown>(callback: () => Result, ...args: Args): Result;
-  runOutOfContext<Result = unknown>(callback: () => Result): Result;
+  runOutOfContext<Result = unknown>(callback: () => Result): () => Result;
   runAsyncIterator<T, TReturn = any, TNext = unknown>(iterator: AsyncGenerator<T, TReturn, TNext>, ...ctorArgs: Args): AsyncGenerator<T, TReturn, TNext>;
   runIterator<T, TReturn = any, TNext = unknown>(generator: Generator<T, TReturn, TNext>, ...ctorArgs: Args): Generator<T, TReturn, TNext>;
 }
@@ -70,14 +70,18 @@ export const scoped = <ClassType extends new (...args: any[]) => any>(
 
   ClassActivator.runOutOfContext = (fn: () => unknown) => {
     if ("disable" in asyncStorage) {
-      asyncStorage.disable();
-      return fn();
+      return () => {
+        asyncStorage.disable();
+        fn();
+      };
     } else {
       console.warn("di-kit using untracked AsyncResource in runOutOfContext as a fallback")
-      const resource = new AsyncResource("UNTRACKED");
-      const result = resource.runInAsyncScope(fn);
-      resource.emitDestroy();
-      return result;
+      return () => {
+        const resource = new AsyncResource("UNTRACKED");
+        const result = resource.runInAsyncScope(fn);
+        resource.emitDestroy();
+        return result;
+      }
     }
   };
 
