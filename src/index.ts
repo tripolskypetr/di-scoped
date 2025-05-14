@@ -1,4 +1,4 @@
-import { AsyncLocalStorage, AsyncResource } from 'async_hooks';
+import { AsyncLocalStorage } from 'async_hooks';
 
 interface IScopedClassType<Args extends any[]> {
   new (...args: Args): any;
@@ -69,17 +69,7 @@ export const scoped = <ClassType extends new (...args: any[]) => any>(
   };
 
   ClassActivator.runOutOfContext = (fn: () => unknown) => {
-    if ("exit" in asyncStorage) {
-      return () => asyncStorage.exit(fn);
-    } else {
-      console.warn("di-kit using untracked AsyncResource in runOutOfContext as a fallback")
-      return () => {
-        const resource = new AsyncResource("UNTRACKED");
-        const result = resource.runInAsyncScope(fn);
-        resource.emitDestroy();
-        return result;
-      }
-    }
+    return () => asyncStorage.run(undefined as never, fn);
   };
 
   ClassActivator.runAsyncIterator = function <T, TReturn = any, TNext = unknown>(
@@ -164,6 +154,22 @@ const TestClass = scoped(class {
       return `Hello, ${this.name}`;
     }
 });
+*/
+
+/*
+const sleep = () => new Promise<void>((res) => setTimeout(() => res(), 100))
+
+TestClass.runInContext(async () => {
+  await sleep()
+  await TestClass.runOutOfContext(async () => {
+    await sleep()
+    await TestClass.runInContext(async () => {
+      await sleep()
+      console.log(new TestClass().test())
+    }, "foo2");
+  })
+
+}, "foo1");
 */
 
 /*
