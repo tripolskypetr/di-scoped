@@ -69,10 +69,16 @@ export const scoped = <ClassType extends new (...args: any[]) => any>(
   };
 
   ClassActivator.runOutOfContext = (fn: () => unknown) => {
-    const resource = new AsyncResource("UNTRACKED");
-    const result = resource.runInAsyncScope(fn);
-    resource.emitDestroy();
-    return result;
+    if ("disable" in asyncStorage) {
+      asyncStorage.disable();
+      return fn();
+    } else {
+      console.warn("di-kit using untracked AsyncResource in runOutOfContext as a fallback")
+      const resource = new AsyncResource("UNTRACKED");
+      const result = resource.runInAsyncScope(fn);
+      resource.emitDestroy();
+      return result;
+    }
   };
 
   ClassActivator.runAsyncIterator = function <T, TReturn = any, TNext = unknown>(
